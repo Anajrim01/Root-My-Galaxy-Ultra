@@ -1,5 +1,5 @@
 diff --git a/kernel/Kbuild b/kernel/Kbuild
-index b9d91f8e54c313feb632809c7ce3992961f59e34..d572194a1f753c254258025dcef4c81d6c7a8f44 100644
+index 366d80eb7f26e5f41c07992921c67b4a5fdd764d..8e9d5920ac3e9e0bb912e9c6147a1230067a59b4 100644
 --- a/kernel/Kbuild
 +++ b/kernel/Kbuild
 @@ -1,5 +1,8 @@
@@ -9,9 +9,9 @@ index b9d91f8e54c313feb632809c7ce3992961f59e34..d572194a1f753c254258025dcef4c81d
 +kernelsu-objs += compat/samsung_defex.o
 +
  kernelsu-objs += feature/kernel_umount.o
+ kernelsu-objs += feature/module_blacklist.o
  kernelsu-objs += feature/sulog.o
- kernelsu-objs += feature/sucompat.o
-@@ -68,9 +71,22 @@ endif
+@@ -69,9 +72,22 @@ endif
  ifeq ($(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER),y)
  ccflags-y += -DCONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=1
  endif
@@ -34,7 +34,7 @@ index b9d91f8e54c313feb632809c7ce3992961f59e34..d572194a1f753c254258025dcef4c81d
  ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-generic/errno.h
  
  ifneq ($(KBUILD_EXTMOD),)
-@@ -86,7 +102,7 @@ else
+@@ -87,7 +103,7 @@ else
  KSU_KERNEL_DIR := $(src)
  endif
  
@@ -443,11 +443,11 @@ index 0000000000000000000000000000000000000000..2104f2e9a82be77e46603bec3c4292dc
 +#endif
 +}
 diff --git a/kernel/core/init.c b/kernel/core/init.c
-index 4ad81c037ffc0a650bc46f087708432f3f3aef3c..c280dfa56d0d9cd667a3fab0b95bf88237fc814a 100644
+index 617c0744abbcf17a8b4a360eff1df991f1e281dd..fcd989bb0db631080ab39b31cf3fc06a1140c159 100644
 --- a/kernel/core/init.c
 +++ b/kernel/core/init.c
-@@ -25,6 +25,13 @@
- #include "feature/selinux_hide.h"
+@@ -26,6 +26,13 @@
+ #include "feature/module_blacklist.h"
  #include "feature/sulog.h"
  #include "infra/symbol_resolver.h"
 +#include "ksu_samsung_kdp.h"
@@ -460,7 +460,7 @@ index 4ad81c037ffc0a650bc46f087708432f3f3aef3c..c280dfa56d0d9cd667a3fab0b95bf882
  
  #if defined(__x86_64__) && !defined(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER)
  #include <asm/cpufeature.h>
-@@ -131,13 +138,35 @@ int __init kernelsu_init(void)
+@@ -132,13 +139,35 @@ int __init kernelsu_init(void)
  		pr_alert("shell is allowed at init!");
  	}
  
@@ -496,8 +496,8 @@ index 4ad81c037ffc0a650bc46f087708432f3f3aef3c..c280dfa56d0d9cd667a3fab0b95bf882
 +	}
  	ksu_syscall_hook_init();
  
- 	ksu_feature_init();
-@@ -171,6 +200,10 @@ int __init kernelsu_init(void)
+ 	// Block modules early, before vendor modules are loaded in second stage.
+@@ -175,6 +204,10 @@ int __init kernelsu_init(void)
  		ksu_file_wrapper_init();
  
  		ksu_boot_completed = true;
@@ -508,9 +508,9 @@ index 4ad81c037ffc0a650bc46f087708432f3f3aef3c..c280dfa56d0d9cd667a3fab0b95bf882
  		track_throne(false);
  
  		ksu_feature_apply_forced();
-@@ -230,7 +263,9 @@ void __exit kernelsu_exit(void)
- 
+@@ -231,7 +264,9 @@ void __exit kernelsu_exit(void)
  	ksu_feature_exit();
+ 	ksu_module_blacklist_exit();
  
 -	put_cred(ksu_cred);
 +	ksu_samsung_defex_exit();
