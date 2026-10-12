@@ -167,9 +167,9 @@ def prepare_release(source, work, config):
     changed = [n for n, t in config['backends'].items() if t['rebuild']]
     write_json(work / 'result/release.json', {'schema': 1, 'base_commit': config['app_base'],
                 'version': version, 'changed': changed, 'targets': config})
-    rows = [f'Weekly backend update — {version}', '',
+    rows = ["## What's new", '', '### Refreshed backends', '',
             'Rebuilt the changed backends from pinned official source commits, with the existing',
-            'Samsung compatibility changes. Each daemon embeds its matching driver.', '',
+            'Samsung compatibility changes. Each daemon embeds its matching driver. All three use **UAPI 5**.', '',
             '| Backend | Driver / UAPI | Upstream commit | Daemon |', '|---|---|---|---|']
     for name, t in config['backends'].items():
         label = {'kernelsu': 'KernelSU', 'kernelsu-next': 'KernelSU-Next', 'resukisu': 'BakaSU'}[name]
@@ -177,11 +177,15 @@ def prepare_release(source, work, config):
         rows.append(f'| {label} ({status}) | {t["version"]} / 5 | '
                     f'[{t["commit"][:8]}](https://github.com/{t["repository"]}/commit/{t["commit"]}) | '
                     f'{t["daemon_version"]} |')
-    rows += ['', 'The release APK uses the repository release key and the existing app package.',
-             'Use a UAPI 5 manager. Fully reboot after installation, then activate root to load',
-             'the new driver. Updating the manager alone does not load it.', '',
-             'Firmware support and exploit/bridge files are unchanged. Build, unit, bundle and',
-             'signature checks are automated; this release has not been tested on a phone.', '']
+    rows += ['', '## Validation and current limits', '',
+             '- Backend builds, Android unit tests, driver/daemon matching, APK bundle integrity and release-signature checks passed.',
+             '- Firmware support and exploit/bridge files are unchanged. The refreshed backend revisions still need device testing.',
+             '- SusFS LKM remains experimental. Installed-app/package-list detections are a separate layer.', '',
+             '## Updating', '',
+             f'1. Install **RootMyGalaxyUltra-{version}.apk** over the existing app; it uses the same package and release signing key.',
+             '2. Perform a **full reboot** to replace the loaded backend and SusFS module. A soft reboot keeps the existing kernel modules loaded.',
+             '3. Activate root again through Root My Galaxy Ultra and enable SusFS in the updated app.', '',
+             'Use a **UAPI 5-compatible manager** for your selected backend. Updating the manager alone does not replace the loaded driver.', '']
     (work / 'result/release-notes.md').write_text('\n'.join(rows))
 
 

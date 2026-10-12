@@ -133,11 +133,8 @@ jobs:
           # The run number is in the asset name so two CI downloads of the same version differ.
           mkdir -p ci-release
           cp app/build/outputs/apk/release/*.apk \
-            "ci-release/RootMyGalaxyNext-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk"
-          # The debug APK goes out with it, and it is installable over the signed builds because the
-          # debug buildtype is signed with the same key when one is configured (app/build.gradle.kts).
-          cp app/build/outputs/apk/debug/*.apk \
-            "ci-release/RootMyGalaxyNext-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}-debug.apk"
+            "ci-release/RootMyGalaxyUltra-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk"
+          # Debug APKs remain Actions artifacts; public pre-releases carry only production builds.
 
       - name: Publish pre-release
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/dev'
@@ -150,28 +147,32 @@ jobs:
           VERSION_NAME="$(grep -oE 'appVersionBase[[:space:]]*=[[:space:]]*"[^"]+"' app/build.gradle.kts | head -n 1 | cut -d'"' -f2)"
           TAG="ci-${VERSION_NAME}-${GITHUB_RUN_NUMBER}"
           TITLE="CI build ${VERSION_NAME} (${GITHUB_RUN_NUMBER})"
-          APK="ci-release/RootMyGalaxyNext-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk"
-          DEBUG_APK="ci-release/RootMyGalaxyNext-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}-debug.apk"
+          APK="ci-release/RootMyGalaxyUltra-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk"
           SHORT_SHA="$(echo "$GITHUB_SHA" | cut -c1-7)"
 
           {
-            echo "# ${TITLE}"
+            echo "## What's new"
             echo
-            echo "Automated build from \`${GITHUB_REF_NAME}\`."
+            echo "### CI build"
             echo
-            echo "- Version: ${VERSION_NAME} (installed builds show \`${VERSION_NAME}+ci.${GITHUB_RUN_NUMBER}\`)"
+            echo "- Automated development build from \`${GITHUB_REF_NAME}\`."
+            echo "- Version: ${VERSION_NAME}."
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}) $(git log -1 --format=%s)"
             echo "- Branch: ${GITHUB_REF_NAME}"
             echo "- Workflow run: [${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
             echo
-            echo "Two APKs: \`RootMyGalaxyNext-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk\` is the release"
-            echo "build, and \`...-debug.apk\` is the same code with debugging on. Both are signed with"
-            echo "the repository key, so either installs over the other and over CI builds of this fork that"
-            echo "share its package id. This build is its own app (\`dev.rushiranpise.rmgnext\`): it installs"
-            echo "beside Root My Galaxy rather than over it, and starts with no settings, no history and no"
-            echo "superuser grant of its own."
+            echo "## Validation and current limits"
             echo
-            echo "Tagged releases come from the Release Build workflow, not from here."
+            echo "- Android unit tests, APK builds and the production APK signature check passed."
+            echo "- This is a development snapshot. Automated checks do not establish phone-test coverage."
+            echo
+            echo "## Updating"
+            echo
+            echo "1. Install **RootMyGalaxyUltra-${VERSION_NAME}-ci${GITHUB_RUN_NUMBER}.apk** over the existing app; it uses the same package and release signing key."
+            echo "2. Perform a **full reboot** to replace the loaded backend and SusFS module. A soft reboot keeps the existing kernel modules loaded."
+            echo "3. Activate root again through Root My Galaxy Ultra and enable SusFS in the updated app."
+            echo
+            echo "Use a **UAPI 5-compatible manager** for your selected backend. Updating the manager alone does not replace the loaded driver."
           } > ci-release/notes.md
 
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -180,9 +181,9 @@ jobs:
               --notes-file ci-release/notes.md \
               --prerelease \
               --latest=false
-            gh release upload "$TAG" "$APK" "$DEBUG_APK" --clobber
+            gh release upload "$TAG" "$APK" --clobber
           else
-            gh release create "$TAG" "$APK" "$DEBUG_APK" \
+            gh release create "$TAG" "$APK" \
               --target "$GITHUB_SHA" \
               --title "$TITLE" \
               --notes-file ci-release/notes.md \
