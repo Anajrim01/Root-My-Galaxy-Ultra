@@ -23,15 +23,15 @@
     "path": "kernelsu/patches/ReSukiSU-v4.2.0-rc3-samsung-kdp-rkp-defex.patch",
     "sha256": "6f4be33d5f558865f02e6d0010f40320f540c78f80c999ad6bf0b8f22275b4f4"
   },
-  "created_utc": "2026-10-11",
-  "app_base_commit": "87e725ea23921c05a3a1ec4890d25ae0d562c04e",
+  "created_utc": "2026-10-12",
+  "app_base_commit": "3fee7775f1d445cea61ac176890271332f275e20",
   "upstream_repository": "https://github.com/Baka-SU/BakaSU",
-  "upstream_commit": "f6cb7e70c10ebde149f3121ae68b945514fd0801",
-  "upstream_commit_count": 4526,
-  "driver_version": 35226,
+  "upstream_commit": "6200478dd76fc63093a8226d360f5072c46aea26",
+  "upstream_commit_count": 4527,
+  "driver_version": 35227,
   "uapi_version": 5,
   "manager_required_uapi": 5,
-  "daemon_version": "4.2.0-rc3-55-gf6cb7e70",
+  "daemon_version": "4.2.0-rc3-56-g6200478d",
   "validation": {
     "kernel_build": "passed",
     "daemon_build": "passed",
@@ -44,19 +44,19 @@
   "outputs": {
     "ksud": {
       "size": 4368752,
-      "sha256": "1a20ad3ac18bbf00ba72acfc2baf952dd434d8ddbc74305d2781f144fc81d849"
+      "sha256": "7c5e04180c1b8bcdaa9d4b7d7e820443a489b5caa0a88b06765e14c9a50d811c"
     },
     "kernelsu.ko": {
       "size": 432856,
-      "sha256": "ef77c9e760d65d672be7b30ff9d74b8d61c9eae585c09ad0217eaa13f424d86f"
+      "sha256": "bd1315d9269b87a656fc1497018f527c5bf0a42472ccbf96c20daf54d6cbcbb4"
     },
     "helper": {
       "size": 24232,
-      "sha256": "5aed6da221dd0c49619a88e572e07f38170c0faaf1d8e17d19854ef3385766ef"
+      "sha256": "47695b74978d77659141adaf028c815a35076167283d4c8e6806729f92968fef"
     }
   },
   "rebased_patch": {
-    "path": "samsung-compat-35226.patch",
+    "path": "samsung-compat-35227.patch",
     "size": 64215,
     "sha256": "b90785dfe5c20435bf5230e28453d12e28bc403a2cb87ca0b91eff7fe6b31756"
   },
@@ -82,6 +82,6 @@
     "userspace/ksud/src/android/utils.rs": "f52cfe6312c3fe2b44eb36e0b2ff862d51d8868c8cd5eea51a96748fdbee7539",
     "userspace/ksuinit/src/lib.rs": "8e33b668dd35a23cafde56b00f49d35f832fa0ce7709733791f9e64c037c6ccc"
   },
-  "app_version": "1.2.2",
-  "previous_upstream_commit": "48fa4bb7ec8bddb8ea932a8c9be0877f89a1fa73"
+  "app_version": "1.2.4",
+  "previous_upstream_commit": "f6cb7e70c10ebde149f3121ae68b945514fd0801"
 }

@@ -3,22 +3,22 @@
   "variants": {
     "kernelsu": {
       "library": "libm3qroot_kernelsu.so",
-      "driverVersion": 32675,
+      "driverVersion": 32680,
       "uapiVersion": 5,
       "size": 24232,
-      "sha256": "b183aed908c42e9b88eab3e5080b33e3164b3d858aef6b615b3648f190bdd08a",
+      "sha256": "5c67661a0065e797ee4abfe12ac06a8a9564e57494cafca98697656b267e2f7f",
       "changes": [
         {
           "virtual_address": "0x6c94",
           "file_offset": 11412,
           "before": "528fef89",
-          "after": "528ff469"
+          "after": "528ff509"
         },
         {
           "virtual_address": "0x6cc8",
           "file_offset": 11464,
           "before": "528fef82",
-          "after": "528ff462"
+          "after": "528ff502"
         },
         {
           "virtual_address": "0x6ca0",
@@ -36,22 +36,22 @@
     },
     "kernelsu-next": {
       "library": "libm3qroot_kernelsu_next.so",
-      "driverVersion": 33340,
+      "driverVersion": 33342,
       "uapiVersion": 5,
       "size": 24232,
-      "sha256": "a442faea38f036af3067d2143ab1afdb0f571175fc89a103f9da04c601a7244b",
+      "sha256": "b226f4609b7907ae64136bbd1f57e1b9b91e479d2f4462824297dcc2134e88cf",
       "changes": [
         {
           "virtual_address": "0x6c94",
           "file_offset": 11412,
           "before": "528fef89",
-          "after": "52904789"
+          "after": "529047c9"
         },
         {
           "virtual_address": "0x6cc8",
           "file_offset": 11464,
           "before": "528fef82",
-          "after": "52904782"
+          "after": "529047c2"
         },
         {
           "virtual_address": "0x6ca0",
@@ -75,22 +75,22 @@
     },
     "resukisu": {
       "library": "libm3qroot_resukisu.so",
-      "driverVersion": 35226,
+      "driverVersion": 35227,
       "uapiVersion": 5,
       "size": 24232,
-      "sha256": "5aed6da221dd0c49619a88e572e07f38170c0faaf1d8e17d19854ef3385766ef",
+      "sha256": "47695b74978d77659141adaf028c815a35076167283d4c8e6806729f92968fef",
       "changes": [
         {
           "virtual_address": "0x6c94",
           "file_offset": 11412,
           "before": "528fef89",
-          "after": "52913349"
+          "after": "52913369"
         },
         {
           "virtual_address": "0x6cc8",
           "file_offset": 11464,
           "before": "528fef82",
-          "after": "52913342"
+          "after": "52913362"
         },
         {
           "virtual_address": "0x6ca0",

@@ -1,5 +1,5 @@
 diff --git a/kernel/Kbuild b/kernel/Kbuild
-index 69b1b6a6e52aa4aab74b4fb0be8de00e41265f9b..7662f1ca9c3e821b5fdfb1ba7669974229d2e45e 100644
+index 6c92a0130cdc796b137292d4dd107fe960d90e1d..a5f20681c7e25b916905f5e783a0c99105452671 100644
 --- a/kernel/Kbuild
 +++ b/kernel/Kbuild
 @@ -1,5 +1,8 @@
@@ -11,7 +11,7 @@ index 69b1b6a6e52aa4aab74b4fb0be8de00e41265f9b..7662f1ca9c3e821b5fdfb1ba76699742
  kernelsu-objs += feature/kernel_umount.o
  kernelsu-objs += feature/module_blacklist.o
  kernelsu-objs += feature/sulog.o
-@@ -68,9 +71,22 @@ endif
+@@ -69,9 +72,22 @@ endif
  ifeq ($(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER),y)
  ccflags-y += -DCONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=1
  endif
@@ -34,7 +34,7 @@ index 69b1b6a6e52aa4aab74b4fb0be8de00e41265f9b..7662f1ca9c3e821b5fdfb1ba76699742
  ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-generic/errno.h
  
  ifneq ($(KBUILD_EXTMOD),)
-@@ -87,7 +103,7 @@ KSU_KERNEL_DIR := $(src)
+@@ -88,7 +104,7 @@ KSU_KERNEL_DIR := $(src)
  endif
  endif
  
@@ -43,7 +43,7 @@ index 69b1b6a6e52aa4aab74b4fb0be8de00e41265f9b..7662f1ca9c3e821b5fdfb1ba76699742
  
  obj-$(CONFIG_KSU) += kernelsu.o
  
-@@ -124,7 +140,9 @@ ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
+@@ -125,7 +141,9 @@ ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
  else
  # If there is no .git directory, use default version
  $(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU a git repository!")
@@ -415,7 +415,7 @@ index 0000000000000000000000000000000000000000..2104f2e9a82be77e46603bec3c4292dc
 +#endif
 +}
 diff --git a/kernel/core/init.c b/kernel/core/init.c
-index c9b531ba97d99de4eb97bd2dce8f983cd62a5021..99b1493ea13a54fac61b029c632a7240c6b58f05 100644
+index 0ca7529f89312b813fa4e07fda26b0f6751dc8cf..f7da66e5cdb51dc8e8b1d89878c81f31008c56f8 100644
 --- a/kernel/core/init.c
 +++ b/kernel/core/init.c
 @@ -8,6 +8,7 @@
@@ -426,15 +426,15 @@ index c9b531ba97d99de4eb97bd2dce8f983cd62a5021..99b1493ea13a54fac61b029c632a7240
  #include "policy/app_profile.h"
  #include "policy/feature.h"
  #include "klog.h" // IWYU pragma: keep
-@@ -27,6 +28,7 @@
- #include "feature/selinux_hide.h"
+@@ -28,6 +29,7 @@
  #include "feature/module_blacklist.h"
+ #include "feature/shell_su_adb_only.h"
  #include "infra/symbol_resolver.h"
 +#include "compat/samsung_defex.h"
  
  #if defined(__x86_64__) && !defined(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER)
  #include <asm/cpufeature.h>
-@@ -127,13 +129,36 @@ int __init kernelsu_init(void)
+@@ -128,13 +130,36 @@ int __init kernelsu_init(void)
          pr_alert("shell is allowed at init!");
      }
  
@@ -472,7 +472,7 @@ index c9b531ba97d99de4eb97bd2dce8f983cd62a5021..99b1493ea13a54fac61b029c632a7240
      ksu_syscall_hook_init();
  
      // Block modules early, before vendor modules are loaded in second stage.
-@@ -226,7 +251,9 @@ void __exit kernelsu_exit(void)
+@@ -229,7 +254,9 @@ void __exit kernelsu_exit(void)
      ksu_feature_exit();
      ksu_module_blacklist_exit();
  
@@ -1407,7 +1407,7 @@ index 10d032620b3681c3cc16ac6b886b7f9976e77ff2..a474d61f3f0f7289118632843121a414
  
  void __init ksu_app_profile_init(void)
 diff --git a/kernel/selinux/selinux.c b/kernel/selinux/selinux.c
-index 7bc6d6d0dd3da8e4ca9064e0f84a4043bbb72663..6536b22a77b329ff530af1cabcdf3204cb065401 100644
+index e5dcc4d3c1e2dec98459d7af27deb880be4e346f..7c6033a0c901588150bfd3c14e449b3628b1770e 100644
 --- a/kernel/selinux/selinux.c
 +++ b/kernel/selinux/selinux.c
 @@ -5,6 +5,7 @@
@@ -1418,7 +1418,7 @@ index 7bc6d6d0dd3da8e4ca9064e0f84a4043bbb72663..6536b22a77b329ff530af1cabcdf3204
  
  /*
   * Cached SID values for frequently checked contexts.
-@@ -219,4 +220,7 @@ void escape_to_root_for_adb_root(void)
+@@ -233,4 +234,7 @@ void escape_to_root_for_adb_root(void)
          return;
      }
      commit_creds(cred);

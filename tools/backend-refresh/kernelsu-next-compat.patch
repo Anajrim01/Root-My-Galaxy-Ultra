@@ -1,5 +1,5 @@
 diff --git a/kernel/Kbuild b/kernel/Kbuild
-index 366d80eb7f26e5f41c07992921c67b4a5fdd764d..8e9d5920ac3e9e0bb912e9c6147a1230067a59b4 100644
+index c32fa7cde0c942c08e441ba05f68e5a96a39845d..b1675c3152e449d7460bbe23a2b7913352a09926 100644
 --- a/kernel/Kbuild
 +++ b/kernel/Kbuild
 @@ -1,5 +1,8 @@
@@ -11,7 +11,7 @@ index 366d80eb7f26e5f41c07992921c67b4a5fdd764d..8e9d5920ac3e9e0bb912e9c6147a1230
  kernelsu-objs += feature/kernel_umount.o
  kernelsu-objs += feature/module_blacklist.o
  kernelsu-objs += feature/sulog.o
-@@ -69,9 +72,22 @@ endif
+@@ -70,9 +73,22 @@ endif
  ifeq ($(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER),y)
  ccflags-y += -DCONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=1
  endif
@@ -34,7 +34,7 @@ index 366d80eb7f26e5f41c07992921c67b4a5fdd764d..8e9d5920ac3e9e0bb912e9c6147a1230
  ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-generic/errno.h
  
  ifneq ($(KBUILD_EXTMOD),)
-@@ -87,7 +103,7 @@ else
+@@ -88,7 +104,7 @@ else
  KSU_KERNEL_DIR := $(src)
  endif
  
@@ -443,11 +443,11 @@ index 0000000000000000000000000000000000000000..2104f2e9a82be77e46603bec3c4292dc
 +#endif
 +}
 diff --git a/kernel/core/init.c b/kernel/core/init.c
-index 617c0744abbcf17a8b4a360eff1df991f1e281dd..fcd989bb0db631080ab39b31cf3fc06a1140c159 100644
+index 87a17ef0feddae45aed26189d0e825d442969ac5..f5930de0a474a520c2ad296e90d5ddcde46a9a0b 100644
 --- a/kernel/core/init.c
 +++ b/kernel/core/init.c
-@@ -26,6 +26,13 @@
- #include "feature/module_blacklist.h"
+@@ -27,6 +27,13 @@
+ #include "feature/shell_su_adb_only.h"
  #include "feature/sulog.h"
  #include "infra/symbol_resolver.h"
 +#include "ksu_samsung_kdp.h"
@@ -460,7 +460,7 @@ index 617c0744abbcf17a8b4a360eff1df991f1e281dd..fcd989bb0db631080ab39b31cf3fc06a
  
  #if defined(__x86_64__) && !defined(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER)
  #include <asm/cpufeature.h>
-@@ -132,13 +139,35 @@ int __init kernelsu_init(void)
+@@ -133,13 +140,35 @@ int __init kernelsu_init(void)
  		pr_alert("shell is allowed at init!");
  	}
  
@@ -497,7 +497,7 @@ index 617c0744abbcf17a8b4a360eff1df991f1e281dd..fcd989bb0db631080ab39b31cf3fc06a
  	ksu_syscall_hook_init();
  
  	// Block modules early, before vendor modules are loaded in second stage.
-@@ -175,6 +204,10 @@ int __init kernelsu_init(void)
+@@ -177,6 +206,10 @@ int __init kernelsu_init(void)
  		ksu_file_wrapper_init();
  
  		ksu_boot_completed = true;
@@ -508,7 +508,7 @@ index 617c0744abbcf17a8b4a360eff1df991f1e281dd..fcd989bb0db631080ab39b31cf3fc06a
  		track_throne(false);
  
  		ksu_feature_apply_forced();
-@@ -231,7 +264,9 @@ void __exit kernelsu_exit(void)
+@@ -234,7 +267,9 @@ void __exit kernelsu_exit(void)
  	ksu_feature_exit();
  	ksu_module_blacklist_exit();
  
@@ -1452,7 +1452,7 @@ index 6336a2227f9b7ac3c05b07a41853af9f7f675254..8ecb073095fedc701f3855311ed30f10
  
  void __init ksu_app_profile_init(void)
 diff --git a/kernel/selinux/selinux.c b/kernel/selinux/selinux.c
-index cbd818140e96d1931be92a054c188b6e396c2eba..65d54c25a6e5b1c36cceccff0040a4563493be7a 100644
+index 1a76dbd784767c5a819bde5e8dc46d83152f4272..7f8ed68a8d3b00dfcb8093fe295a25217cc84b56 100644
 --- a/kernel/selinux/selinux.c
 +++ b/kernel/selinux/selinux.c
 @@ -5,6 +5,7 @@
@@ -1463,7 +1463,7 @@ index cbd818140e96d1931be92a054c188b6e396c2eba..65d54c25a6e5b1c36cceccff0040a456
  #include "infra/symbol_resolver.h"
  
  #ifdef CONFIG_ANDROID
-@@ -296,4 +297,7 @@ void escape_to_root_for_adb_root(void)
+@@ -310,4 +311,7 @@ void escape_to_root_for_adb_root(void)
          return;
      }
      commit_creds(cred);
