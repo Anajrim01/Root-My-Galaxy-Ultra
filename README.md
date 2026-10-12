@@ -73,17 +73,17 @@ The current source bundles these driver/daemon pairs:
 
 | Backend | Driver / UAPI | Verified UAPI 5 manager downloads |
 |---|---|---|
-| KernelSU | `32680 / 5` | [Manager APK (ZIP)](https://nightly.link/tiann/KernelSU/actions/runs/37518122292/manager.zip) · [Official build](https://github.com/tiann/KernelSU/actions/runs/37518122292) |
-| KernelSU-Next | `33342 / 5` | [Manager APK (ZIP)](https://nightly.link/KernelSU-Next/KernelSU-Next/actions/runs/37513294225/manager.zip) · [Official build](https://github.com/KernelSU-Next/KernelSU-Next/actions/runs/37513294225) |
-| BakaSU | `35227 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/37544361704/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/37544361704) |
+| KernelSU | `32680 / 5` | [Manager APK (ZIP)](https://nightly.link/tiann/KernelSU/actions/runs/38193657837/manager.zip) · [Official build](https://github.com/tiann/KernelSU/actions/runs/38193657837) |
+| KernelSU-Next | `33342 / 5` | [Manager APK (ZIP)](https://nightly.link/KernelSU-Next/KernelSU-Next/actions/runs/38185586953/manager.zip) · [Official build](https://github.com/KernelSU-Next/KernelSU-Next/actions/runs/38185586953) |
+| BakaSU | `35227 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/38234508137/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/38234508137) |
 
 Download the ZIP, extract it, and install the APK. For BakaSU on a Samsung phone,
-choose `BakaSU_v4.2.0-rc3_35216-arm64-v8a-release.apk` from the archive.
-These are official upstream development builds verified to use UAPI 5.
+choose the APK ending in `-arm64-v8a-release.apk` from the archive.
+These official upstream development builds match the source revisions bundled
+above and are verified to use UAPI 5.
 The download links use [nightly.link](https://nightly.link/)
 to retrieve the original GitHub artifacts without a GitHub login; **Official build**
-opens their upstream source and artifact records. The pinned artifacts are
-currently retained until **4 January 2027**.
+opens their upstream source and artifact records. The pinned artifacts currently expire on **9–10 January 2027 (UTC)**.
 
 These are pinned upstream development revisions with Samsung compatibility
 changes. [Backend documentation](backends/README.md) contains the exact source
