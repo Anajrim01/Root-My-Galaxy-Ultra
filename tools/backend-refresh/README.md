@@ -17,6 +17,24 @@ week uses no native build, creates no commit, and publishes no release.
 Updating a compatibility patch rebuilds its driver/daemon pair even when the
 upstream revision and native version stay the same.
 
+Each updated backend build also refreshes the README's manager download links.
+It searches the official manager workflow on each configured source branch for
+successful builds of the bundled commit. It downloads the release artifact,
+checks its SHA-256 against GitHub's artifact record, checks the manager build
+number, and reads the ARM64 library's UAPI getter without executing the APK.
+BakaSU selects the ARM64 release APK rather than a debug or spoofed manager.
+
+If the exact manager build is not ready or has been removed, it checks the latest
+successful official manager builds on that source branch for a compatible UAPI.
+If none pass, it rechecks and retains the previous verified UAPI 5 manager and
+reports a warning. A temporary API/download outage
+also preserves the previous link. A known expired or incompatible previous
+artifact is replaced with an official-builds link instead of a broken download.
+Manager availability does not block a valid backend APK release. The workflow
+summary and the build artifact's `validation/manager-downloads.json` record the
+chosen upstream runs, APK/artifact hashes, UAPI versions and expiry dates.
+Unchanged weeks continue to skip the build and publication.
+
 [Daily backend compatibility](../../.github/workflows/backend-compatibility.yml)
 checks at **02:43 UTC every day**, before Monday's weekly run. It validates the current bundle, snapshots
 the same upstream branches, and checks changed sources against the same
@@ -141,6 +159,7 @@ python3 tools/test_backend_bundle.py
 python3 tools/backend-refresh/test_refresh.py
 python3 tools/backend-refresh/test_patching.py
 python3 tools/backend-refresh/test_notify.py
+python3 tools/backend-refresh/test_managers.py
 python3 tools/backend-refresh/probe.py --output /tmp/upstream-heads.json
 python3 tools/backend-refresh/refresh.py --work /tmp/rmgu-build --snapshot /tmp/upstream-heads.json --discover-only
 ```

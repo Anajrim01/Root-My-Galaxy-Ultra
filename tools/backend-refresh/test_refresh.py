@@ -13,6 +13,8 @@ import probe
 import refresh
 import release
 import stage
+import managers
+from test_managers import FakeGitHub, NOW
 
 PROJECT = common.PROJECT
 
@@ -191,6 +193,11 @@ class RefreshTests(unittest.TestCase):
             config = plan_for(source)
             stage.main(source, work, config)
             refresh.prepare_release(source, work, config)
+            # The workflow refreshes manager links before finish-build repackages the source.
+            manager_config = common.load_config(source / 'tools/backend-refresh/targets.json')
+            manager_report = managers.update(source, work / 'logs/manager-downloads.json',
+                FakeGitHub(manager_config, (source / 'README.md').read_text()), NOW)
+            self.assertTrue(all(r['status'] == 'matched' for r in manager_report['managers'].values()))
             publisher = root / 'publisher'
             subprocess.run(['git', 'clone', '--quiet', '--shared', str(source), str(publisher)], check=True)
             with patch.object(refresh, 'PROJECT', publisher):
@@ -204,6 +211,8 @@ class RefreshTests(unittest.TestCase):
                 checked = release.apply_checked_update(result)
             self.assertEqual(info['version'], checked['version'])
             self.assertEqual(info['version'], common.app_version(publisher))
+            self.assertEqual((source / 'README.md').read_text(), (publisher / 'README.md').read_text())
+            self.assertTrue((result / 'validation/manager-downloads.json').is_file())
 
     def test_artifact_cannot_weaken_control_checks(self):
         with tempfile.TemporaryDirectory() as directory:

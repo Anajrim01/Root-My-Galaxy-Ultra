@@ -49,6 +49,7 @@ jobs:
           python3 tools/backend-refresh/test_refresh.py
           python3 tools/backend-refresh/test_patching.py
           python3 tools/backend-refresh/test_notify.py
+          python3 tools/backend-refresh/test_managers.py
       - name: Snapshot the official upstream branches
         id: probe
         run: python3 tools/backend-refresh/probe.py --output "$RUNNER_TEMP/upstream-heads.json"
@@ -84,6 +85,9 @@ jobs:
     if: needs.probe.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 150
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -102,6 +106,13 @@ jobs:
           sudo ln -s "$RUNNER_TEMP/rmgu-backends/ddk-root/opt/ddk" /opt/ddk
       - name: Build and validate matched drivers and daemons
         run: python3 tools/backend-refresh/refresh.py --work "$RUNNER_TEMP/rmgu-backends" --snapshot "$RUNNER_TEMP/snapshot/upstream-heads.json" --release
+      - name: Refresh verified UAPI 5 manager download links
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/backend-refresh/managers.py \
+            --project "$RUNNER_TEMP/rmgu-backends/source" \
+            --receipt "$RUNNER_TEMP/rmgu-backends/logs/manager-downloads.json"
       - name: Set up JDK 25 (matches the Gradle daemon criteria)
         uses: actions/setup-java@v4
         with:

@@ -75,15 +75,18 @@ The current source bundles these driver/daemon pairs:
 |---|---|---|
 | KernelSU | `32680 / 5` | [Manager APK (ZIP)](https://nightly.link/tiann/KernelSU/actions/runs/38193657837/manager.zip) · [Official build](https://github.com/tiann/KernelSU/actions/runs/38193657837) |
 | KernelSU-Next | `33342 / 5` | [Manager APK (ZIP)](https://nightly.link/KernelSU-Next/KernelSU-Next/actions/runs/38185586953/manager.zip) · [Official build](https://github.com/KernelSU-Next/KernelSU-Next/actions/runs/38185586953) |
-| BakaSU | `35227 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/38234508137/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/38234508137) |
+| BakaSU | `35227 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/38152678560/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/38152678560) |
 
 Download the ZIP, extract it, and install the APK. For BakaSU on a Samsung phone,
 choose the APK ending in `-arm64-v8a-release.apk` from the archive.
-These official upstream development builds match the source revisions bundled
-above and are verified to use UAPI 5.
+These are official upstream development builds verified to use UAPI 5.
+A manager build number can differ from the bundled driver version.
+The weekly backend build prefers managers from its selected source revisions;
+otherwise it verifies a current UAPI-compatible official manager or retains
+the previous verified link, with a warning in the workflow summary.
 The download links use [nightly.link](https://nightly.link/)
 to retrieve the original GitHub artifacts without a GitHub login; **Official build**
-opens their upstream source and artifact records. The pinned artifacts currently expire on **9–10 January 2027 (UTC)**.
+opens their upstream source and artifact records. GitHub artifacts can expire.
 
 These are pinned upstream development revisions with Samsung compatibility
 changes. [Backend documentation](backends/README.md) contains the exact source
