@@ -78,6 +78,6 @@
     "userspace/ksud/src/late_load.rs": "b01d401c6f64a3e64e76932ab5e6605bc94f968cdfa0f522c343651ec9918567",
     "userspace/ksud/src/utils.rs": "5a077fd7b9d5632c1879a7124f81e161cffd1cdb6dab72881778bf9dbabc80f0"
   },
-  "app_version": "1.2.4",
+  "app_version": "1.2.5",
   "previous_upstream_commit": "f895b80a3aad79948ba8074f53cf8f65a314d576"
 }

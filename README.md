@@ -74,8 +74,8 @@ The current source bundles these driver/daemon pairs:
 | Backend | Driver / UAPI | Verified UAPI 5 manager downloads |
 |---|---|---|
 | KernelSU | `32680 / 5` | [Manager APK (ZIP)](https://nightly.link/tiann/KernelSU/actions/runs/38193657837/manager.zip) · [Official build](https://github.com/tiann/KernelSU/actions/runs/38193657837) |
-| KernelSU-Next | `33342 / 5` | [Manager APK (ZIP)](https://nightly.link/KernelSU-Next/KernelSU-Next/actions/runs/38185586953/manager.zip) · [Official build](https://github.com/KernelSU-Next/KernelSU-Next/actions/runs/38185586953) |
-| BakaSU | `35227 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/38152678560/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/38152678560) |
+| KernelSU-Next | `33354 / 5` | [Manager APK (ZIP)](https://nightly.link/KernelSU-Next/KernelSU-Next/actions/runs/38466620063/manager.zip) · [Official build](https://github.com/KernelSU-Next/KernelSU-Next/actions/runs/38466620063) |
+| BakaSU | `35229 / 5` | [Manager APKs (ZIP)](https://nightly.link/Baka-SU/BakaSU/actions/runs/38429479845/Manager-release.zip) · [Official build](https://github.com/Baka-SU/BakaSU/actions/runs/38429479845) |
 
 Download the ZIP, extract it, and install the APK. For BakaSU on a Samsung phone,
 choose the APK ending in `-arm64-v8a-release.apk` from the archive.
