@@ -1527,6 +1527,61 @@ index 5381571f3ce58d913ae9e77e3d0f319f0081020a..1dc640d0c42ab2e2c1504c7eda7b93f3
 -
      Ok(())
  }
+diff --git a/userspace/ksud/src/susfsd.rs b/userspace/ksud/src/susfsd.rs
+index 6062f92abab5ab267236cca6032ebcaecc0922e2..629e48ed8f64e85e0a0498435795132e0d1b3b98 100644
+--- a/userspace/ksud/src/susfsd.rs
++++ b/userspace/ksud/src/susfsd.rs
+@@ -19,6 +19,9 @@ const SUSFS_MAX_VARIANT_BUFSIZE: usize = 16;
+ 
+ const ERR_CMD_NOT_SUPPORTED: i32 = 126;
+ 
++const RMGU_MANAGED_SUSFS: bool = true;
++const RMGU_SUSFS_MESSAGE: &str = "This Samsung build uses Root My Galaxy Ultra to manage its matching SusFS module";
++
+ struct AutoLoadConfig {
+     enabled: bool,
+     fallback_kmi: Option<String>,
+@@ -68,10 +71,14 @@ fn read_autoload_config() -> Result<AutoLoadConfig> {
+ }
+ 
+ pub fn autoload_enabled() -> Result<bool> {
++    if RMGU_MANAGED_SUSFS {
++        return Ok(false);
++    }
+     Ok(read_autoload_config()?.enabled)
+ }
+ 
+ pub fn set_autoload(enabled: bool, kmi: Option<&str>) -> Result<()> {
++    ensure!(!enabled || !RMGU_MANAGED_SUSFS, "{RMGU_SUSFS_MESSAGE}");
+     let path = autoload_config_path();
+     if !enabled {
+         match fs::remove_file(&path) {
+@@ -140,6 +147,9 @@ fn detected_susfs_version() -> Option<String> {
+ }
+ 
+ pub fn load_if_autoload_enabled() -> Result<()> {
++    if RMGU_MANAGED_SUSFS {
++        return Ok(());
++    }
+     let config = read_autoload_config()?;
+     if !config.enabled {
+         return Ok(());
+@@ -168,6 +178,7 @@ pub fn load_if_autoload_enabled() -> Result<()> {
+ }
+ 
+ pub fn load(kmi: Option<&str>) -> Result<()> {
++    ensure!(!RMGU_MANAGED_SUSFS, "{RMGU_SUSFS_MESSAGE}");
+     anyhow::ensure!(
+         cfg!(target_arch = "aarch64"),
+         "SUSFS guard LKM is only available for arm64"
+@@ -198,6 +209,7 @@ pub fn load(kmi: Option<&str>) -> Result<()> {
+ }
+ 
+ pub fn unload() -> Result<()> {
++    ensure!(!RMGU_MANAGED_SUSFS, "{RMGU_SUSFS_MESSAGE}");
+     rustix::system::delete_module(c"susfs_guard_lkm", 0)
+         .context("Failed to unload SUSFS guard LKM")?;
+     println!("Unloaded SUSFS guard LKM");
 diff --git a/userspace/ksud/src/utils.rs b/userspace/ksud/src/utils.rs
 index 9365663cefe124422bea71e12e1b37b70928ce75..f4631abeefec80c283c1e187eebacf188df749a0 100644
 --- a/userspace/ksud/src/utils.rs

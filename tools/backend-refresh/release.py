@@ -15,7 +15,7 @@ import tempfile
 import zipfile
 
 from common import ASSETS, HERE, JAVA, JNI, PROJECT, app_version, baseline, capture, load_config, record, write_json
-from refresh import package_result
+from refresh import package_result, render_curated_notes
 
 
 def metadata(result):
@@ -95,6 +95,11 @@ def apply_checked_update(result):
              ASSETS / 'm3q/helper-variants.json', Path('tools/backend-refresh/targets.json'),
              Path('backends/README.md')]
     allowed = {p.as_posix() if isinstance(p, Path) else p for p in fixed}
+    notes_path = Path('docs/release-notes') / f'{info["version"]}.md'
+    expected_notes = None
+    if (PROJECT / notes_path).is_file():
+        expected_notes = render_curated_notes((PROJECT / notes_path).read_text(), info['targets'])
+        allowed.add(notes_path.as_posix())
     for name in old:
         allowed.update([str(ASSETS / 'azhl' / name / 'ksud'),
                         str(JNI / ('libm3qksud_' + name.replace('-', '_') + '.so')),
@@ -116,6 +121,10 @@ def apply_checked_update(result):
     subprocess.run(['git', 'apply', '--check', '-'], input=patch, cwd=PROJECT, check=True)
     subprocess.run(['git', 'apply', '-'], input=patch, cwd=PROJECT, check=True)
     config = load_config(PROJECT / 'tools/backend-refresh/targets.json')
+    if expected_notes is not None:
+        if ((PROJECT / notes_path).read_text() != expected_notes or
+                (result / 'release-notes.md').read_text() != expected_notes):
+            raise ValueError('Release notes differ from the trusted template and backend table')
     targets = info['targets']['backends']
     for name, target in targets.items():
         for key in ('repository', 'branch', 'commit', 'commit_count', 'version', 'rust', 'daemon_version'):

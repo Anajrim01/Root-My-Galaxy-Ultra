@@ -48,6 +48,14 @@ def plan_for(source):
 
 
 class RefreshTests(unittest.TestCase):
+    def test_reviewed_history_transition_is_bounded_to_the_exact_backend_and_pair(self):
+        old = '6200478dd76fc63093a8226d360f5072c46aea26'
+        new = 'd7260ca1e5c128061122924d0d48754e361e135c'
+        self.assertTrue(refresh.reviewed_history_transition('resukisu', old, new))
+        self.assertFalse(refresh.reviewed_history_transition('kernelsu-next', old, new))
+        self.assertFalse(refresh.reviewed_history_transition('resukisu', 'a' * 40, new))
+        self.assertFalse(refresh.reviewed_history_transition('resukisu', old, 'b' * 40))
+
     def snapshot(self, changed_heads=(), changed_patches=()):
         config = common.load_config()
         manifests = common.baseline(PROJECT)

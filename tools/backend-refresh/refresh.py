@@ -16,6 +16,19 @@ from common import HERE, PROJECT, app_version, baseline, capture, load_config, n
 from probe import needs_rebuild, probe
 import patching
 
+# BakaSU dropped a revert that only lifted its CONFIG_KSU_SUSFS build stop.
+# RMGU uses its separate Samsung SusFS module and does not enable that config.
+# The runtime source delta was reviewed for 1.2.5. This exception covers only
+# this exact pair; any later history rewrite still requires another review.
+REVIEWED_HISTORY_TRANSITIONS = {
+    ('resukisu', '6200478dd76fc63093a8226d360f5072c46aea26',
+     'd7260ca1e5c128061122924d0d48754e361e135c'),
+}
+
+
+def reviewed_history_transition(name, previous, current):
+    return (name, previous, current) in REVIEWED_HISTORY_TRANSITIONS
+
 
 def run(args, log, cwd=None, env=None):
     print('Running:', ' '.join(map(str, args)), flush=True)
@@ -80,8 +93,14 @@ def discover(project, work, snapshot):
         # the pinned base can be gone entirely after an upstream rebase (exit 128), so
         # check=True would crash on both instead of reporting a verdict.
         prev = target['commit']
+        reviewed_transition = reviewed_history_transition(name, prev, sha)
         present = subprocess.run(['git', 'cat-file', '-e', prev + '^{commit}'],
                                  cwd=repo, stderr=subprocess.DEVNULL).returncode == 0
+        if not present and reviewed_transition:
+            run(['git', 'fetch', '--no-tags', 'origin', prev],
+                logs / f'{name}-reviewed-base-fetch.log', repo)
+            present = subprocess.run(['git', 'cat-file', '-e', prev + '^{commit}'],
+                                     cwd=repo, stderr=subprocess.DEVNULL).returncode == 0
         if not present:
             raise ValueError(
                 f'{name}: pinned base {prev} is no longer reachable upstream (history '
@@ -89,13 +108,15 @@ def discover(project, work, snapshot):
                 f're-validate {name}-compat.patch')
         ancestor = subprocess.run(['git', 'merge-base', '--is-ancestor', prev, sha],
                                   cwd=repo).returncode
-        if ancestor == 1:
+        if ancestor == 1 and not reviewed_transition:
             raise ValueError(
                 f'{name}: new head {sha} is not a descendant of pinned base {prev} '
                 f'(upstream rollback or rewritten history); manual review required')
-        if ancestor != 0:
+        if ancestor not in (0, 1):
             raise RuntimeError(
                 f'{name}: git merge-base failed comparing {prev}..{sha} (exit {ancestor})')
+        if ancestor == 1:
+            print(f'{name}: using reviewed history transition {prev} -> {sha}', flush=True)
         count, version, describe = verify_upstream(repo, name, target)
         if source_changed and version <= target['version']:
             raise ValueError('Upstream version must increase when the pinned commit changes')
@@ -159,6 +180,20 @@ def package_result(source, work):
         'These automated checks are not hardware testing or new firmware support.\n')
 
 
+def render_curated_notes(template, config):
+    marker = '<!-- RMGU_BACKEND_TABLE -->'
+    if template.count(marker) != 1:
+        raise ValueError('Curated backend release notes need exactly one backend table marker')
+    table = ['| Backend | Driver / UAPI | Upstream commit | Daemon |', '|---|---|---|---|']
+    for name, target in config['backends'].items():
+        label = {'kernelsu': 'KernelSU', 'kernelsu-next': 'KernelSU-Next', 'resukisu': 'BakaSU'}[name]
+        status = 'updated' if target['rebuild'] else 'unchanged'
+        table.append(f'| {label} ({status}) | {target["version"]} / 5 | '
+                     f'[{target["commit"][:8]}](https://github.com/{target["repository"]}/commit/{target["commit"]}) | '
+                     f'{target["daemon_version"]} |')
+    return template.replace(marker, '\n'.join(table))
+
+
 def prepare_release(source, work, config):
     old = app_version(source)
     version = next_version(old, capture(['git', 'tag', '--list'], source).splitlines())
@@ -186,7 +221,12 @@ def prepare_release(source, work, config):
              '2. Perform a **full reboot** to replace the loaded backend and SusFS module. A soft reboot keeps the existing kernel modules loaded.',
              '3. Activate root again through Root My Galaxy Ultra and enable SusFS in the updated app.', '',
              'Use a **UAPI 5-compatible manager** for your selected backend. Updating the manager alone does not replace the loaded driver.', '']
-    (work / 'result/release-notes.md').write_text('\n'.join(rows))
+    notes = '\n'.join(rows)
+    curated = source / 'docs/release-notes' / f'{version}.md'
+    if curated.is_file():
+        notes = render_curated_notes(curated.read_text(), config)
+        curated.write_text(notes)
+    (work / 'result/release-notes.md').write_text(notes)
 
 
 def main():
