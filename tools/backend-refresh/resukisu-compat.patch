@@ -1689,3 +1689,15 @@ index 1a62d4c2b18197d338451a4c809edd1308acc481..8af9bffd729926053f7c31674cc5db49
      }
  
      let mut kmsg = match open_kmsg_at_end() {
+diff --git a/userspace/ksud/Cargo.lock b/userspace/ksud/Cargo.lock
+index 2268723e5c28c516db07c9a744560f284e94eec8..961dd5637cf3e216459ae63ff68e8a7941ab9719 100644
+--- a/userspace/ksud/Cargo.lock
++++ b/userspace/ksud/Cargo.lock
+@@ -992,6 +992,7 @@ dependencies = [
+  "memmap2",
+  "nom 8.0.0",
+  "num_enum",
++ "prettyplease",
+  "prop-rs-android",
+  "regex-lite",
+  "rust-embed",

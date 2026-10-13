@@ -37,7 +37,7 @@
       "daemon_version": "4.2.0-rc3-56-g6200478d",
       "rust": "nightly-2026-09-25",
       "rebuild": false,
-      "compat_sha256": "b90785dfe5c20435bf5230e28453d12e28bc403a2cb87ca0b91eff7fe6b31756",
+      "compat_sha256": "58152f17e6790c4a92a7de909816b5f26b7becd1caad5ca2f71e16bfce10146f",
       "branch": "main",
       "version_offset": 30700
     }
