@@ -1689,3 +1689,39 @@ index 1a62d4c2b18197d338451a4c809edd1308acc481..8af9bffd729926053f7c31674cc5db49
      }
  
      let mut kmsg = match open_kmsg_at_end() {
+diff --git a/userspace/ksud/src/android/soft_reboot.rs b/userspace/ksud/src/android/soft_reboot.rs
+index c44a966f6477393bb6b7aff231792c96dd0253f5..f64d86e5729d073daf34dc757c446efe124cffd6 100644
+--- a/userspace/ksud/src/android/soft_reboot.rs
++++ b/userspace/ksud/src/android/soft_reboot.rs
+@@ -206,6 +206,31 @@
+ 
+     info!("post-fs-data");
+     on_post_fs_data()?;
++    // Cycle Samsung's vendor composer while Android is stopped, before starting the framework.
++    if !Command::new("/system/bin/sh")
++        .args(["-c", r#"[ "$(getprop ro.product.manufacturer | tr '[:upper:]' '[:lower:]')" = samsung ] || exit 0
++services=$(awk '$1 == "service" && $3 ~ /(hwcomposer|graphics.*composer|display.*composer|\/(hwc|composer)([._@-]|$))/ {print $2}' \
++    /vendor/etc/init/*.rc /vendor/etc/init/hw/*.rc /odm/etc/init/*.rc /odm/etc/init/hw/*.rc \
++    /system/etc/init/*.rc /system/etc/init/hw/*.rc /system_ext/etc/init/*.rc /product/etc/init/*.rc /init*.rc \
++    2>/dev/null | sort -u)
++rc=0
++for service in $services; do
++    [ "$(getprop "init.svc.$service")" = running ] || continue
++    setprop ctl.stop "$service" || { rc=1; continue; }
++    n=0
++    while [ "$(getprop "init.svc.$service")" != stopped ] && [ "$n" -lt 50 ]; do
++        sleep 0.1
++        n=$((n + 1))
++    done
++    [ "$(getprop "init.svc.$service")" = stopped ] || rc=1
++    setprop ctl.start "$service" || rc=1
++done
++exit "$rc""#])
++        .status()
++        .is_ok_and(|status| status.success())
++    {
++        warn!("Samsung hardware composer cycle failed during soft reboot");
++    }
+     info!("start");
+     let status = Command::new("start").status().context("start failed")?;
+     if !status.success() {
