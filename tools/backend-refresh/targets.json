@@ -25,7 +25,7 @@
       "daemon_version": "3.4.1-9-g0a77550c",
       "rust": "1.98.1",
       "rebuild": false,
-      "compat_sha256": "717af079077e0f8ea8cf94ff913a4ae48504d7dbcd3f3bc5033f4413a13b0932",
+      "compat_sha256": "53c2e269b0d07f5baf3206904697af7682f54698ca225b511e4548ffc8e31435",
       "branch": "dev",
       "version_offset": 30000
     },

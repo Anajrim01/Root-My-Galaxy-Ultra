@@ -1528,20 +1528,20 @@ index 5381571f3ce58d913ae9e77e3d0f319f0081020a..1dc640d0c42ab2e2c1504c7eda7b93f3
      Ok(())
  }
 diff --git a/userspace/ksud/src/susfsd.rs b/userspace/ksud/src/susfsd.rs
-index 6062f92abab5ab267236cca6032ebcaecc0922e2..629e48ed8f64e85e0a0498435795132e0d1b3b98 100644
+index 6ecd033d5ff3e4375ce5bc692f3aad00b6c6cd11..38ba81ce2c92c221cbce8f1453dac03491083c97 100644
 --- a/userspace/ksud/src/susfsd.rs
 +++ b/userspace/ksud/src/susfsd.rs
-@@ -19,6 +19,9 @@ const SUSFS_MAX_VARIANT_BUFSIZE: usize = 16;
+@@ -16,6 +16,9 @@ const SUSFS_MAX_VERSION_BUFSIZE: usize = 16;
+ const SUSFS_MAX_VARIANT_BUFSIZE: usize = 16;
  
  const ERR_CMD_NOT_SUPPORTED: i32 = 126;
- 
++
 +const RMGU_MANAGED_SUSFS: bool = true;
 +const RMGU_SUSFS_MESSAGE: &str = "This Samsung build uses Root My Galaxy Ultra to manage its matching SusFS module";
-+
- struct AutoLoadConfig {
-     enabled: bool,
-     fallback_kmi: Option<String>,
-@@ -68,10 +71,14 @@ fn read_autoload_config() -> Result<AutoLoadConfig> {
+ const AUTOLOAD_CONFIG_MODULE_ID: &str = "internal.ksud.susfsd";
+ const AUTOLOAD_ENABLED_CONFIG_KEY: &str = "autoload.enabled";
+ const AUTOLOAD_FALLBACK_KMI_CONFIG_KEY: &str = "autoload.fallback_kmi";
+@@ -61,10 +64,14 @@ fn read_autoload_config() -> Result<AutoLoadConfig> {
  }
  
  pub fn autoload_enabled() -> Result<bool> {
@@ -1553,10 +1553,10 @@ index 6062f92abab5ab267236cca6032ebcaecc0922e2..629e48ed8f64e85e0a0498435795132e
  
  pub fn set_autoload(enabled: bool, kmi: Option<&str>) -> Result<()> {
 +    ensure!(!enabled || !RMGU_MANAGED_SUSFS, "{RMGU_SUSFS_MESSAGE}");
-     let path = autoload_config_path();
      if !enabled {
-         match fs::remove_file(&path) {
-@@ -140,6 +147,9 @@ fn detected_susfs_version() -> Option<String> {
+         crate::module_config::set_config_value(
+             AUTOLOAD_CONFIG_MODULE_ID,
+@@ -139,6 +146,9 @@ fn detected_susfs_version() -> Option<String> {
  }
  
  pub fn load_if_autoload_enabled() -> Result<()> {
@@ -1566,7 +1566,7 @@ index 6062f92abab5ab267236cca6032ebcaecc0922e2..629e48ed8f64e85e0a0498435795132e
      let config = read_autoload_config()?;
      if !config.enabled {
          return Ok(());
-@@ -168,6 +178,7 @@ pub fn load_if_autoload_enabled() -> Result<()> {
+@@ -167,6 +177,7 @@ pub fn load_if_autoload_enabled() -> Result<()> {
  }
  
  pub fn load(kmi: Option<&str>) -> Result<()> {
@@ -1574,7 +1574,7 @@ index 6062f92abab5ab267236cca6032ebcaecc0922e2..629e48ed8f64e85e0a0498435795132e
      anyhow::ensure!(
          cfg!(target_arch = "aarch64"),
          "SUSFS guard LKM is only available for arm64"
-@@ -198,6 +209,7 @@ pub fn load(kmi: Option<&str>) -> Result<()> {
+@@ -197,6 +208,7 @@ pub fn load(kmi: Option<&str>) -> Result<()> {
  }
  
  pub fn unload() -> Result<()> {
