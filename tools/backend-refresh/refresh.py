@@ -50,6 +50,38 @@ def fetch_snapshot_commit(repo, sha, log):
         run(['git', 'fetch', '--no-tags', 'origin', sha], log, repo)
 
 
+def restore_pinned_version_tags(repo, expected, log):
+    """Reproduce a recorded git-describe name when rebuilding the same source pin."""
+    current = capture(['git', 'describe', '--tags', '--always'], repo).removeprefix('v')
+    if current == expected:
+        return
+    match = re.fullmatch(r'(.+)-\d+-g([0-9a-f]{7,40})', expected)
+    tag_name = match[1] if match else expected
+    tags = capture(['git', 'tag', '--list'], repo).splitlines()
+    git = ['git'] + (['-c', f'core.abbrev={len(match[2])}'] if match else [])
+    selected = None
+    for tag in ('v' + tag_name, tag_name):
+        if tag not in tags:
+            continue
+        described = capture(git + ['describe', '--tags', '--always', '--match', tag], repo)
+        if described.removeprefix('v') == expected:
+            selected = tag
+            break
+    if selected is None:
+        raise ValueError(f'Cannot reproduce pinned daemon version {expected}; found {current}')
+    # Only this disposable source clone is changed. Commit history and source
+    # remain intact; later upstream tags must not rename an existing build pin.
+    removed = [tag for tag in tags if tag != selected]
+    if removed:
+        run(['git', 'tag', '-d', *removed], log, repo)
+    if match:
+        capture(['git', 'config', 'core.abbrev', str(len(match[2]))], repo)
+    with log.open('a') as output:
+        output.write(f'Pinned version: {expected}; upstream refs reported: {current}; kept tag: {selected}\n')
+    if capture(['git', 'describe', '--tags', '--always'], repo).removeprefix('v') != expected:
+        raise ValueError('Pinned daemon version could not be restored')
+
+
 def verify_upstream(repo, name, target):
     if capture(['git', 'rev-parse', '--is-shallow-repository'], repo) != 'false':
         raise ValueError('Complete upstream history is required for version calculation')
@@ -128,6 +160,9 @@ def discover(project, work, snapshot):
                 f'{name}: git merge-base failed comparing {prev}..{sha} (exit {ancestor})')
         if ancestor == 1:
             print(f'{name}: using reviewed history transition {prev} -> {sha}', flush=True)
+        if not source_changed:
+            restore_pinned_version_tags(repo, target['daemon_version'],
+                                        logs / f'{name}-pinned-version-tags.log')
         count, version, describe = verify_upstream(repo, name, target)
         if source_changed and version <= target['version']:
             raise ValueError('Upstream version must increase when the pinned commit changes')

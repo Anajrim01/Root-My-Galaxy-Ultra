@@ -49,6 +49,35 @@ def plan_for(source):
 
 
 class RefreshTests(unittest.TestCase):
+    def test_new_upstream_tags_cannot_rename_a_patch_only_rebuild(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / 'source'
+            subprocess.run(['git', 'init', '--quiet', '-b', 'main', repo], check=True)
+            for key, value in [('user.name', 'Test'), ('user.email', 'test@example.invalid')]:
+                subprocess.run(['git', 'config', key, value], cwd=repo, check=True)
+            for text in ('first', 'pinned'):
+                (repo / 'file').write_text(text)
+                subprocess.run(['git', 'add', '.'], cwd=repo, check=True)
+                subprocess.run(['git', 'commit', '--quiet', '-m', text], cwd=repo, check=True)
+                if text == 'first':
+                    subprocess.run(['git', 'tag', 'v1.0.0'], cwd=repo, check=True)
+            pin = common.capture(['git', 'rev-parse', 'HEAD'], repo)
+            count = common.capture(['git', 'rev-list', '--count', 'HEAD'], repo)
+            expected = common.capture(['git', 'describe', '--tags', '--always'], repo).removeprefix('v')
+            subprocess.run(['git', 'tag', 'v1.0.1'], cwd=repo, check=True)
+            with self.assertRaisesRegex(ValueError, 'Cannot reproduce'):
+                refresh.restore_pinned_version_tags(repo, '9.9.9', root / 'invalid.log')
+            self.assertIn('v1.0.1', common.capture(['git', 'tag', '--list'], repo))
+            refresh.restore_pinned_version_tags(repo, expected, root / 'tags.log')
+            self.assertEqual(common.capture(['git', 'describe', '--tags', '--always'], repo), 'v' + expected)
+            self.assertEqual(common.capture(['git', 'rev-parse', 'HEAD'], repo), pin)
+            self.assertEqual(common.capture(['git', 'rev-list', '--count', 'HEAD'], repo), count)
+            self.assertEqual((repo / 'file').read_text(), 'pinned')
+            self.assertEqual(common.capture(['git', 'status', '--porcelain'], repo), '')
+            refresh.restore_pinned_version_tags(repo, expected, root / 'unused.log')
+            self.assertFalse((root / 'unused.log').exists())
+
     def test_exact_snapshot_pin_can_be_rebuilt_after_upstream_moves_refs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
