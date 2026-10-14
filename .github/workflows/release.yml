@@ -83,6 +83,9 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest --no-daemon
 
+      - name: Verify bundled driver and daemon pairs
+        run: python3 tools/test_backend_bundle.py
+
       - name: Resolve release tag
         id: release_tag
         shell: bash
@@ -149,6 +152,47 @@ jobs:
       - name: Build release APK
         run: ./gradlew assembleRelease --no-daemon
 
+      - name: Verify APK payload integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import zipfile
+
+          apks = list(Path('app/build/outputs/apk/release').glob('*.apk'))
+          if len(apks) != 1:
+              raise SystemExit('Expected exactly one production APK')
+          assets = Path('app/src/main/assets')
+          jni = Path('app/src/main/jniLibs/arm64-v8a')
+          with zipfile.ZipFile(apks[0]) as archive:
+              names = archive.namelist()
+              if len(names) != len(set(names)):
+                  raise SystemExit('Duplicate APK ZIP entries')
+              checked = 0
+              for path in sorted(assets.rglob('*')):
+                  if path.is_file():
+                      entry = 'assets/' + path.relative_to(assets).as_posix()
+                      if archive.read(entry) != path.read_bytes():
+                          raise SystemExit('Packaged asset differs from source: ' + entry)
+                      checked += 1
+              for path in sorted(jni.glob('*.so')):
+                  if path.name.startswith(('libm3q', 'librmgususfs')):
+                      entry = 'lib/arm64-v8a/' + path.name
+                      if archive.read(entry) != path.read_bytes():
+                          raise SystemExit('Packaged helper differs from source: ' + entry)
+                      checked += 1
+              module = archive.read('assets/susfs/bzig/susfs_guard_lkm.ko')
+              digest = hashlib.sha256(module).hexdigest()
+              for profile in ('bzig', 'bzid'):
+                  metadata = json.loads(archive.read('assets/susfs/' + profile + '/profile.json'))
+                  if metadata['module']['sha256'] != digest:
+                      raise SystemExit('SusFS module/profile hash mismatch: ' + profile)
+          print('Verified', checked, 'bundled files; SusFS SHA-256:', digest)
+          PY
+
       # Public releases carry only the production APK.
       - name: Verify APK signatures
         shell: bash
@@ -166,6 +210,7 @@ jobs:
               echo "::error::$APK is not signed with the repository key (got $SIGNED_SHA256, expected $EXPECTED_SHA256)."
               exit 1
             fi
+            "$BUILD_TOOLS/zipalign" -c 4 "$APK"
             echo "$APK: $SIGNED_SHA256"
           done
 
@@ -177,6 +222,15 @@ jobs:
           VERSION_NAME="$(grep -oE 'appVersionBase[[:space:]]*=[[:space:]]*"[^"]+"' app/build.gradle.kts | head -n 1 | cut -d'"' -f2)"
           mkdir -p release-assets
           cp app/build/outputs/apk/release/*.apk "release-assets/RootMyGalaxyUltra-${VERSION_NAME}.apk"
+          (cd release-assets && sha256sum "RootMyGalaxyUltra-${VERSION_NAME}.apk" > SHA256SUMS)
+
+      - name: Upload release build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Generate release notes
         shell: bash
@@ -232,9 +286,9 @@ jobs:
               --title "Root My Galaxy Ultra $TAG_NAME" \
               --notes-file release-notes.md \
               --latest
-            gh release upload "$TAG_NAME" release-assets/*.apk --clobber
+            gh release upload "$TAG_NAME" release-assets/*.apk release-assets/SHA256SUMS --clobber
           else
-            gh release create "$TAG_NAME" release-assets/*.apk \
+            gh release create "$TAG_NAME" release-assets/*.apk release-assets/SHA256SUMS \
               --title "Root My Galaxy Ultra $TAG_NAME" \
               --notes-file release-notes.md \
               --latest

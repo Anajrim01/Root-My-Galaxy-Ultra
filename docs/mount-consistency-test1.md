@@ -1,8 +1,9 @@
 # Mount consistency test 1
 
-This candidate is based on RMGU 1.2.5 with the same three backend revisions.
+This candidate was based on RMGU 1.2.5 with the same three backend revisions.
+The tested SusFS payload is included in RMGU 1.2.6.
 
-## What's new
+## Changes
 
 - Require all three mount-table hooks for SusFS mount hiding. If a hook fails,
   activation rolls back and reports the failing hook instead of leaving partial
@@ -15,33 +16,33 @@ This candidate is based on RMGU 1.2.5 with the same three backend revisions.
 
 ## Validation and current limits
 
-- 43 native host cases pass normally and with ASan/UBSan; seven regressions fail
-  against the previous 1.2.5 source.
-- The ARM64 module builds with the same pinned DDK. Kernel imports and module
-  metadata match the released payload; removing debug sections preserves all
+- 43 native host cases passed normally and with ASan/UBSan; seven regressions
+  failed against the previous 1.2.5 source.
+- The ARM64 module built with the same pinned DDK. Kernel imports and module
+  metadata matched the released baseline; removing debug sections preserved all
   allocated sections.
-- Android unit tests, APK packaging and signature checks run in the candidate
-  workflow. A successful workflow is required before distributing its APK.
-- Phone testing remains pending. Reader scope remains the existing non-su
-  SELinux-domain policy; this candidate does not add per-app profile integration.
+- The signed candidate build passed Android unit tests, APK packaging and
+  signature checks:
+  https://github.com/xorpix/Root-My-Galaxy-Ultra/actions/runs/38558350186
+- Device diagnostics on SM-S948B / BZIG reported hide=1, show_probes=3/3 and all
+  backing helpers available. A normal Termux reader saw 209 records compared
+  with 216 root-visible records, with seven module-mount records removed.
+- A timed root capture during a fresh Duck scan found 212 records in regular
+  app processes and 204 in the app zygote and isolated processes. Their eight
+  differences were four app-data binds, two runtime-profile binds and two
+  shared-storage mounts. Removing those eight entries reproduced the same
+  normalized table. No module-mount markers occurred in those captured views.
+- These foreign-process captures were root controls, not Duck's exact isolated
+  reader output. The remaining cross-process warning is not confirmed resolved.
+- Reader scope remains the existing non-su SELinux-domain policy; this change
+  does not add per-app profile integration.
 - Backing-path recognition is bounded and does not inspect every overlay lower
   layer. Existing module rules and namespace-identity tracking remain active.
+- BZID and other device variants still need device testing.
 
-## Testing
+## Updating
 
-1. Install the signed release APK from the candidate build over 1.2.5.
-2. Fully reboot, then activate root and SusFS normally. A soft reboot keeps the
-   previous kernel module loaded.
-3. Keep backend, module and detector settings unchanged from your baseline.
-4. Export a detector report and collect the following in Termux:
+Install the production APK, fully reboot and activate root and SusFS normally.
+A soft reboot keeps the previous kernel module loaded.
 
-   ```sh
-   su -c 'cat /sys/module/susfs_guard_lkm/parameters/mount_stat'
-   ```
-
-Successful mount hiding reports `hide=1` and `show_probes=3/3`. The `backing` line
-shows whether the new helper paths are available. Check ordinary apps and repeat
-the detector check after a soft reboot.
-
-This branch uploads build artifacts; a push does not publish a release or merge
-into `main`.
+The release notes are in [1.2.6.md](release-notes/1.2.6.md).
