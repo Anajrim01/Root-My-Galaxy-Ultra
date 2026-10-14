@@ -31,6 +31,7 @@ def clone_source(directory):
         (source / 'tools/backend-refresh' / f'{name}-compat.patch').write_bytes(
             (source / 'backends' / name / provenance['path']).read_bytes())
         target['compat_sha256'] = provenance['sha256']
+        target['rebuild'] = False
     common.write_json(source / 'tools/backend-refresh/targets.json', config)
     if common.capture(['git', 'status', '--porcelain'], source):
         subprocess.run(['git', 'config', 'user.email', 'validation@example.invalid'], cwd=source, check=True)
@@ -48,6 +49,40 @@ def plan_for(source):
 
 
 class RefreshTests(unittest.TestCase):
+    def test_exact_snapshot_pin_can_be_rebuilt_after_upstream_moves_refs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            remote = root / 'remote'
+            subprocess.run(['git', 'init', '--quiet', '-b', 'main', remote], check=True)
+            for key, value in [('user.name', 'Test'), ('user.email', 'test@example.invalid')]:
+                subprocess.run(['git', 'config', key, value], cwd=remote, check=True)
+            (remote / 'file').write_text('pinned source')
+            subprocess.run(['git', 'add', '.'], cwd=remote, check=True)
+            subprocess.run(['git', 'commit', '--quiet', '-m', 'Pinned source'], cwd=remote, check=True)
+            pin = common.capture(['git', 'rev-parse', 'HEAD'], remote)
+            subprocess.run(['git', 'checkout', '--quiet', '--orphan', 'rewritten'], cwd=remote, check=True)
+            (remote / 'file').write_text('unrelated new source')
+            subprocess.run(['git', 'add', '.'], cwd=remote, check=True)
+            subprocess.run(['git', 'commit', '--quiet', '-m', 'New history'], cwd=remote, check=True)
+            subprocess.run(['git', 'branch', '-D', 'main'], cwd=remote, check=True,
+                           stdout=subprocess.DEVNULL)
+            source = root / 'source'
+            subprocess.run(['git', 'clone', '--quiet', '--no-local', remote, source], check=True)
+            missing = subprocess.run(['git', 'cat-file', '-e', pin + '^{commit}'], cwd=source,
+                                     stderr=subprocess.DEVNULL).returncode
+            self.assertNotEqual(missing, 0)
+            refresh.fetch_snapshot_commit(source, pin, root / 'fetch.log')
+            subprocess.run(['git', 'checkout', '--quiet', '--detach', pin], cwd=source, check=True)
+            self.assertEqual((source / 'file').read_text(), 'pinned source')
+            self.assertEqual(common.capture(['git', 'rev-list', '--count', 'HEAD'], source), '1')
+            self.assertEqual(common.capture(['git', 'rev-parse', '--is-shallow-repository'], source), 'false')
+            refresh.fetch_snapshot_commit(source, pin, root / 'unused.log')
+            self.assertFalse((root / 'unused.log').exists())
+
+    def test_snapshot_fetch_rejects_refs_instead_of_exact_pins(self):
+        with self.assertRaisesRegex(ValueError, 'full commit SHA'):
+            refresh.fetch_snapshot_commit(PROJECT, 'main', Path('/unused.log'))
+
     def test_reviewed_history_transition_is_bounded_to_the_exact_backend_and_pair(self):
         old = '6200478dd76fc63093a8226d360f5072c46aea26'
         new = 'd7260ca1e5c128061122924d0d48754e361e135c'

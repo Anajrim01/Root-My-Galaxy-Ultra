@@ -40,6 +40,16 @@ def run(args, log, cwd=None, env=None):
         raise RuntimeError(f'Command failed ({result.returncode}); see {log}')
 
 
+def fetch_snapshot_commit(repo, sha, log):
+    """Retrieve an exact snapshot pin omitted from the upstream's advertised refs."""
+    if not re.fullmatch(r'[0-9a-f]{40}', sha):
+        raise ValueError('Expected a full commit SHA in snapshot')
+    present = subprocess.run(['git', 'cat-file', '-e', sha + '^{commit}'],
+                             cwd=repo, stderr=subprocess.DEVNULL).returncode == 0
+    if not present:
+        run(['git', 'fetch', '--no-tags', 'origin', sha], log, repo)
+
+
 def verify_upstream(repo, name, target):
     if capture(['git', 'rev-parse', '--is-shallow-repository'], repo) != 'false':
         raise ValueError('Complete upstream history is required for version calculation')
@@ -87,6 +97,7 @@ def discover(project, work, snapshot):
             raise ValueError('Use a new work directory for source clones')
         run(['git', 'clone', 'https://github.com/' + target['repository'] + '.git', repo],
             logs / f'{name}-clone.log')
+        fetch_snapshot_commit(repo, sha, logs / f'{name}-snapshot-fetch.log')
         run(['git', 'checkout', '--detach', sha], logs / f'{name}-checkout.log', repo)
         # Refuse a rewritten history or an accidental rollback - cleanly. 'git merge-base
         # --is-ancestor' returns 1 for "not an ancestor" (a normal result, not an error) and

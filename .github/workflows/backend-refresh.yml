@@ -47,6 +47,7 @@ jobs:
           python3 tools/test_m3q_host.py BundleTests
           python3 tools/test_backend_bundle.py
           python3 tools/backend-refresh/test_refresh.py
+          python3 tools/backend-refresh/test_samsung_composer.py
           python3 tools/backend-refresh/test_patching.py
           python3 tools/backend-refresh/test_notify.py
           python3 tools/backend-refresh/test_managers.py
