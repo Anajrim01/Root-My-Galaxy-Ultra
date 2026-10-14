@@ -1,7 +1,7 @@
 name: CI Build
 
 # The testing branch builds itself: every push to `dev` produces a pre-release with a debug and a
-# release APK. Nothing else builds automatically - `main` is what a stable release is cut from, and
+# release APK. The mount-test branch builds artifacts only. `main` is what a stable release is cut from, and
 # that is the `Release Build` workflow, run by hand.
 #
 # `workflow_dispatch` is the escape hatch: it builds and publishes from whichever ref is picked, so
@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - dev
+      - codex/mount-consistency-20261014
   workflow_dispatch:
 
 permissions:
