@@ -1484,107 +1484,6 @@ index a7434d020984f77f833d752b270738f73004f357..37936c0236caab998a4801508d3e2fa0
 -
      Ok(())
  }
-diff --git a/userspace/ksud/src/utils.rs b/userspace/ksud/src/utils.rs
-index 33653c511885d6851cb0b0459aac5a874cc2ad67..813386a36b55026d5b1f36242f7a004ec667a78e 100644
---- a/userspace/ksud/src/utils.rs
-+++ b/userspace/ksud/src/utils.rs
-@@ -1,7 +1,8 @@
- use anyhow::{Context, Error, Ok, Result, bail};
--use rustix::fs::{Mode, OFlags, open};
-+use rustix::fs::{Mode, OFlags, chown, open};
- use rustix::process::setpgid;
- use rustix::stdio::{dup2_stderr, dup2_stdin, dup2_stdout};
-+use rustix::thread::{Gid, Uid};
- use std::{
-     ffi::{CStr, CString, c_char, c_void},
-     fs::{File, OpenOptions, create_dir_all, remove_file, write},
-@@ -229,15 +230,54 @@ fn link_ksud_to_bin() -> Result<()> {
-     Ok(())
- }
- 
--pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
-+/// Copies this executable to the daemon path, and nothing else.
-+///
-+/// Split out of `install` for the Samsung path: the daemon has to be in place *before* the module
-+/// changes the loader's security context, because a write to `/data/adb/ksud` from the changed
-+/// context is refused and leaves a zero-byte file where a working daemon was. The rest of the
-+/// installation - the label, the binary assets, the `/system/bin` link - is deliberately left to
-+/// [`finish_install`], which runs once the module is active.
-+pub fn stage_daemon() -> Result<()> {
-     ensure_dir_exists(defs::ADB_DIR)?;
--    let _ = std::fs::remove_file(defs::DAEMON_PATH);
--    std::fs::copy(
--        // We should use /proc/self/exe, DO NOT resolve the real path
--        // So that if someone execute /data/adb/ksud install, ksud won't be removed unexpectedly
--        "/proc/self/exe",
--        defs::DAEMON_PATH,
--    )?;
-+
-+    let current_exe = std::env::current_exe().with_context(|| "Failed to get self exe path")?;
-+    if current_exe == Path::new(defs::DAEMON_PATH) {
-+        return Ok(());
-+    }
-+
-+    let daemon = std::fs::read(&current_exe)
-+        .with_context(|| format!("Failed to read {}", current_exe.display()))?;
-+    std::fs::write(defs::DAEMON_PATH, daemon)
-+        .with_context(|| format!("Failed to write {}", defs::DAEMON_PATH))?;
-+    #[cfg(unix)]
-+    set_permissions(defs::DAEMON_PATH, Permissions::from_mode(0o755))?;
-+
-+    Ok(())
-+}
-+
-+/// Moves an already-staged copy onto the daemon path.
-+///
-+/// The staged file is on the same filesystem, so the move is a rename: the destination either has the
-+/// whole new daemon or the old one, and never a truncated file. Ownership and mode are set here
-+/// because the copy arrived from a staging directory this app chose.
-+pub fn stage_daemon_from(staged_exe: impl AsRef<Path>) -> Result<()> {
-+    ensure_dir_exists(defs::ADB_DIR)?;
-+
-+    std::fs::rename(staged_exe.as_ref(), defs::DAEMON_PATH).with_context(|| {
-+        format!(
-+            "Failed to rename {} to {}",
-+            staged_exe.as_ref().display(),
-+            defs::DAEMON_PATH
-+        )
-+    })?;
-+    chown(defs::DAEMON_PATH, Some(Uid::ROOT), Some(Gid::ROOT))?;
-+    #[cfg(unix)]
-+    set_permissions(defs::DAEMON_PATH, Permissions::from_mode(0o755))?;
-+
-+    Ok(())
-+}
-+
-+pub fn finish_install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
-     restorecon::lsetfilecon(defs::DAEMON_PATH, restorecon::KSU_CON)?;
-     // install binary assets
-     assets::ensure_binaries(false).with_context(|| "Failed to extract assets")?;
-@@ -275,6 +315,12 @@ pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Resul
-     Ok(())
- }
- 
-+/// The ordinary install: stage the daemon, then everything that needs the module active.
-+pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
-+    stage_daemon()?;
-+    finish_install(libadbroot, data_path)
-+}
-+
- pub fn uninstall(package_name: &str) -> Result<()> {
-     if Path::new(defs::MODULE_DIR).exists() {
-         println!("- Uninstall modules..");
-@@ -319,10 +365,6 @@ pub fn daemonize_with<F: FnOnce() -> Result<()>>(use_init_pgrp: bool, configure:
-     Ok(())
- }
- 
--pub fn daemonize(use_init_pgrp: bool) -> Result<()> {
--    daemonize_with(use_init_pgrp, || Ok(()))
--}
--
- pub fn create_daemon(use_init_pgrp: bool) -> Result<bool> {
-     create_daemon_with(use_init_pgrp, || Ok(()))
- }
 diff --git a/userspace/ksud/src/soft_reboot.rs b/userspace/ksud/src/soft_reboot.rs
 index d9eb492bf637ae36456fbd77577aa85c8a7ff122..0cc724c1b3e9c0d5dc7adb36818fd6c5592402e2 100644
 --- a/userspace/ksud/src/soft_reboot.rs
@@ -1705,3 +1604,104 @@ index d9eb492bf637ae36456fbd77577aa85c8a7ff122..0cc724c1b3e9c0d5dc7adb36818fd6c5
      info!("start");
      let status = Command::new("start").status().context("start failed")?;
      if !status.success() {
+diff --git a/userspace/ksud/src/utils.rs b/userspace/ksud/src/utils.rs
+index 33653c511885d6851cb0b0459aac5a874cc2ad67..813386a36b55026d5b1f36242f7a004ec667a78e 100644
+--- a/userspace/ksud/src/utils.rs
++++ b/userspace/ksud/src/utils.rs
+@@ -1,7 +1,8 @@
+ use anyhow::{Context, Error, Ok, Result, bail};
+-use rustix::fs::{Mode, OFlags, open};
++use rustix::fs::{Mode, OFlags, chown, open};
+ use rustix::process::setpgid;
+ use rustix::stdio::{dup2_stderr, dup2_stdin, dup2_stdout};
++use rustix::thread::{Gid, Uid};
+ use std::{
+     ffi::{CStr, CString, c_char, c_void},
+     fs::{File, OpenOptions, create_dir_all, remove_file, write},
+@@ -229,15 +230,54 @@ fn link_ksud_to_bin() -> Result<()> {
+     Ok(())
+ }
+ 
+-pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
++/// Copies this executable to the daemon path, and nothing else.
++///
++/// Split out of `install` for the Samsung path: the daemon has to be in place *before* the module
++/// changes the loader's security context, because a write to `/data/adb/ksud` from the changed
++/// context is refused and leaves a zero-byte file where a working daemon was. The rest of the
++/// installation - the label, the binary assets, the `/system/bin` link - is deliberately left to
++/// [`finish_install`], which runs once the module is active.
++pub fn stage_daemon() -> Result<()> {
+     ensure_dir_exists(defs::ADB_DIR)?;
+-    let _ = std::fs::remove_file(defs::DAEMON_PATH);
+-    std::fs::copy(
+-        // We should use /proc/self/exe, DO NOT resolve the real path
+-        // So that if someone execute /data/adb/ksud install, ksud won't be removed unexpectedly
+-        "/proc/self/exe",
+-        defs::DAEMON_PATH,
+-    )?;
++
++    let current_exe = std::env::current_exe().with_context(|| "Failed to get self exe path")?;
++    if current_exe == Path::new(defs::DAEMON_PATH) {
++        return Ok(());
++    }
++
++    let daemon = std::fs::read(&current_exe)
++        .with_context(|| format!("Failed to read {}", current_exe.display()))?;
++    std::fs::write(defs::DAEMON_PATH, daemon)
++        .with_context(|| format!("Failed to write {}", defs::DAEMON_PATH))?;
++    #[cfg(unix)]
++    set_permissions(defs::DAEMON_PATH, Permissions::from_mode(0o755))?;
++
++    Ok(())
++}
++
++/// Moves an already-staged copy onto the daemon path.
++///
++/// The staged file is on the same filesystem, so the move is a rename: the destination either has the
++/// whole new daemon or the old one, and never a truncated file. Ownership and mode are set here
++/// because the copy arrived from a staging directory this app chose.
++pub fn stage_daemon_from(staged_exe: impl AsRef<Path>) -> Result<()> {
++    ensure_dir_exists(defs::ADB_DIR)?;
++
++    std::fs::rename(staged_exe.as_ref(), defs::DAEMON_PATH).with_context(|| {
++        format!(
++            "Failed to rename {} to {}",
++            staged_exe.as_ref().display(),
++            defs::DAEMON_PATH
++        )
++    })?;
++    chown(defs::DAEMON_PATH, Some(Uid::ROOT), Some(Gid::ROOT))?;
++    #[cfg(unix)]
++    set_permissions(defs::DAEMON_PATH, Permissions::from_mode(0o755))?;
++
++    Ok(())
++}
++
++pub fn finish_install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
+     restorecon::lsetfilecon(defs::DAEMON_PATH, restorecon::KSU_CON)?;
+     // install binary assets
+     assets::ensure_binaries(false).with_context(|| "Failed to extract assets")?;
+@@ -275,6 +315,12 @@ pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Resul
+     Ok(())
+ }
+ 
++/// The ordinary install: stage the daemon, then everything that needs the module active.
++pub fn install(libadbroot: Option<PathBuf>, data_path: Option<PathBuf>) -> Result<()> {
++    stage_daemon()?;
++    finish_install(libadbroot, data_path)
++}
++
+ pub fn uninstall(package_name: &str) -> Result<()> {
+     if Path::new(defs::MODULE_DIR).exists() {
+         println!("- Uninstall modules..");
+@@ -319,10 +365,6 @@ pub fn daemonize_with<F: FnOnce() -> Result<()>>(use_init_pgrp: bool, configure:
+     Ok(())
+ }
+ 
+-pub fn daemonize(use_init_pgrp: bool) -> Result<()> {
+-    daemonize_with(use_init_pgrp, || Ok(()))
+-}
+-
+ pub fn create_daemon(use_init_pgrp: bool) -> Result<bool> {
+     create_daemon_with(use_init_pgrp, || Ok(()))
+ }

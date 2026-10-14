@@ -1,9 +1,9 @@
 {
   "schema": 2,
-  "app_base": "1df69bd5160bf217f66acb38e39291274017a289",
+  "app_base": "81cb5269c930395e9de38a658e0f7aa1f2df0a77",
   "uapi": 5,
   "checked_date": "2026-10-14",
-  "build_status": "rebuild-required",
+  "build_status": "built",
   "backends": {
     "kernelsu": {
       "repository": "tiann/KernelSU",
@@ -12,8 +12,8 @@
       "version": 32680,
       "daemon_version": "3.3.0-79-g0c0fdb96",
       "rust": "1.98.1",
-      "rebuild": true,
-      "compat_sha256": "829187b9bf91c073c7548ea57b117a8e1b9c4e7b9cd24602280119613b555977",
+      "rebuild": false,
+      "compat_sha256": "3e8f0505da698478427a3e7034d748fbbfb8deb03c5bf7f5753762c748928172",
       "branch": "main",
       "version_offset": 30000
     },
@@ -24,8 +24,8 @@
       "version": 33354,
       "daemon_version": "3.4.1-21-g3157e782",
       "rust": "1.98.1",
-      "rebuild": true,
-      "compat_sha256": "fa2d906b177d02735b4d69e4ea8d5f15cd49381410d7c7215c5866225a23b615",
+      "rebuild": false,
+      "compat_sha256": "0668a39309bc31875e79ff6b96728ec3fec8c4c6d4ff9ba3441a84b1a18a8a9a",
       "branch": "dev",
       "version_offset": 30000
     },
@@ -36,8 +36,8 @@
       "version": 35229,
       "daemon_version": "4.2.0-rc3-58-gd7260ca1",
       "rust": "nightly-2026-09-25",
-      "rebuild": true,
-      "compat_sha256": "810665753f71f95ed6988eba7724902543ea0ca60d9b424a4239292ae9898ef6",
+      "rebuild": false,
+      "compat_sha256": "a01b753fe0ceae817364b3006f4d57e7886a476f82039be3e0d9882e2e9469e0",
       "branch": "main",
       "version_offset": 30700
     }

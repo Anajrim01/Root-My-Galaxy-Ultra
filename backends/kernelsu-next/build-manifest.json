@@ -1,11 +1,11 @@
 {
   "schema": 2,
-  "created_utc": "2026-10-13",
-  "app_version": "1.2.5",
-  "app_base_commit": "1df69bd5160bf217f66acb38e39291274017a289",
+  "created_utc": "2026-10-14",
+  "app_version": "1.2.7",
+  "app_base_commit": "81cb5269c930395e9de38a658e0f7aa1f2df0a77",
   "upstream_repository": "https://github.com/KernelSU-Next/KernelSU-Next",
   "upstream_commit": "3157e7822190eba628ca6796242db970405e440a",
-  "previous_upstream_commit": "0a77550cce8118d64528a2e7313e4b855914a452",
+  "previous_upstream_commit": "3157e7822190eba628ca6796242db970405e440a",
   "upstream_commit_count": 3354,
   "driver_version": 33354,
   "uapi_version": 5,
@@ -35,8 +35,8 @@
   },
   "outputs": {
     "ksud": {
-      "size": 4293720,
-      "sha256": "751da50bf2f8743e0c044e278bd7a9c8e379c7029c44bd3a1f2ccae9c187198e"
+      "size": 4296376,
+      "sha256": "94f16aa8496c42f888a026eb1b27e6aac71b8fc2a92fa992488fbf8dd3e4ff8a"
     },
     "kernelsu.ko": {
       "size": 502192,
@@ -49,8 +49,8 @@
   },
   "rebased_patch": {
     "path": "samsung-compat-33354.patch",
-    "size": 59502,
-    "sha256": "53c2e269b0d07f5baf3206904697af7682f54698ca225b511e4548ffc8e31435"
+    "size": 63732,
+    "sha256": "0668a39309bc31875e79ff6b96728ec3fec8c4c6d4ff9ba3441a84b1a18a8a9a"
   },
   "validation": {
     "kernel_build": "passed",
@@ -79,6 +79,7 @@
     "kernel/policy/app_profile.c": "e7da56b2cd85327b3f7d06f02e06aaca4ff64bff6132ffefd346c9124febf784",
     "kernel/selinux/selinux.c": "fb3f82179ad364ac50ac148e0c014d4f822bc586251f3efa5ee4422687a2c036",
     "userspace/ksud/src/late_load.rs": "483cd4ece910d2cdefd0d1b6787735feaeb16c74c0aa909380e25b480a4cb11f",
+    "userspace/ksud/src/soft_reboot.rs": "ff6f252965a0a9ecbddbebd215f736cb42dc219fc9856dd66e65d9a61426e2d4",
     "userspace/ksud/src/susfsd.rs": "3c944df9030528ea786f83fea0b37f5148e7c90aa991708f495a2f57ff995e9e",
     "userspace/ksud/src/utils.rs": "75559a08f8b45a50157152c6870bf8db9b53682c6b76644e42bb5e5faf1ecfd3",
     "userspace/ksuinit/src/lib.rs": "8e33b668dd35a23cafde56b00f49d35f832fa0ce7709733791f9e64c037c6ccc"
